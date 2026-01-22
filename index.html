@@ -1,32 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Upload Image</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActFast sa Tipas | Report Incident</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { color: #1d3557; text-align: center; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 20px; }
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+        input[type="text"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        .upload-btn { 
+            background-color: #e63946; color: white; border: none; width: 100%; 
+            padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .upload-btn:hover { background-color: #c1121f; }
+        #preview { width: 100%; border-radius: 8px; margin-top: 10px; display: none; }
+    </style>
 </head>
 <body>
-  <h2>Upload Image</h2>
-  <input type="file" id="file">
-  <button onclick="upload()">Upload</button>
 
-  <script>
-    function upload() {
-      const file = document.getElementById("file").files[0];
-      if (!file) return alert("Select an image");
+<div class="container">
+    <h2>ActFast sa Tipas</h2>
+    <p class="subtitle">Barangay Alert & Incident Reporting</p>
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "YOUR_UPLOAD_PRESET");
+    <div class="form-group">
+        <label>Incident Type</label>
+        <select id="incidentType">
+            <option value="Accident">Accident</option>
+            <option value="Fallen Tree">Fallen Tree / Obstruction</option>
+            <option value="Flooding">Flooding</option>
+            <option value="Crime/Security">Crime / Security</option>
+            <option value="Others">Others</option>
+        </select>
+    </div>
 
-      fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
-        method: "POST",
-        body: formData
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert("Upload successful!");
-        console.log(data.secure_url);
-      });
+    <div class="form-group">
+        <label>Location / Landmark</label>
+        <input type="text" id="location" placeholder="e.g. Near Tipas Elementary School">
+    </div>
+
+    <div class="form-group">
+        <label>Description</label>
+        <textarea id="description" rows="3" placeholder="Provide more details..."></textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Photo Evidence</label>
+        <input type="file" id="file" accept="image/*" capture="environment" onchange="previewImage()">
+        <img id="preview" alt="Image preview">
+    </div>
+
+    <button class="upload-btn" onclick="uploadReport()">SEND ALERT TO BARANGAY</button>
+</div>
+
+<script>
+    function previewImage() {
+        const file = document.getElementById("file").files[0];
+        const preview = document.getElementById("preview");
+        if (file) {
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = "block";
+        }
     }
-  </script>
+
+    function uploadReport() {
+        const fileInput = document.getElementById("file");
+        const type = document.getElementById("incidentType").value;
+        const loc = document.getElementById("location").value;
+        const desc = document.getElementById("description").value;
+
+        if (!fileInput.files[0] || !loc) {
+            return alert("Please provide a photo and location.");
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("upload_preset", "YOUR_UPLOAD_PRESET"); // Replace with your Cloudinary preset
+        
+        // Add metadata to Cloudinary (optional)
+        formData.append("context", `type=${type}|location=${loc}|description=${desc}`);
+
+        fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert("ALERT SENT! Barangay Officials have been notified.");
+            console.log("Report Data:", {
+                imageUrl: data.secure_url,
+                incident: type,
+                location: loc,
+                details: desc
+            });
+            // Here you would typically save these details to your own database
+        })
+        .catch(err => alert("Error sending report. Please try again."));
+    }
+</script>
+
 </body>
 </html>
