@@ -2,88 +2,75 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tipas Admin Feed</title>
+    <title>Tipas Admin Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #1c1e21; }
-        .container { max-width: 800px; margin: auto; }
-        h1 { color: #007bff; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        .card { 
-            background: white; border-radius: 15px; padding: 15px; margin-bottom: 20px; 
-            display: flex; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            align-items: center;
-        }
-        .card img { width: 180px; height: 130px; object-fit: cover; border-radius: 12px; border: 1px solid #eee; }
-        .details { flex: 1; }
-        .badge { 
-            background: #e74c3c; color: white; padding: 4px 10px; 
-            border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;
-        }
-        h2 { margin: 10px 0 5px 0; font-size: 1.2rem; }
-        p { margin: 5px 0; color: #4b4b4b; line-height: 1.4; }
-        small { color: #90949c; font-size: 0.8rem; }
-        .no-data { text-align: center; padding: 50px; color: #888; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; margin-bottom: 20px; }
+        #status { color: #2ecc71; font-weight: bold; font-size: 0.9rem; }
+        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 20px; display: flex; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .card img { width: 220px; height: 160px; object-fit: cover; border-radius: 10px; cursor: pointer; }
+        .info { flex: 1; }
+        .badge { background: #e74c3c; color: white; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; }
+        h2 { margin: 10px 0; }
+        .no-data { text-align: center; color: #888; margin-top: 50px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚨 Tipas Incident Command Center</h1>
-        <div id="feed">Loading latest reports from Google Sheets...</div>
+        <header>
+            <h1>🚨 Tipas Live Feed</h1>
+            <div id="status">Syncing...</div>
+        </header>
+        <div id="feed">Checking for new reports...</div>
     </div>
 
     <script>
-        // Your specific CSV Link
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSk8FzJA22kp4__EJhyYXlAzZ7lMPeLBFRBQ3QaHmml3usecNfpyrEwVLXSMBnOFSJt_WRbJAakgYtU/pub?output=csv";
 
-        async function loadFeed() {
+        async function updateDashboard() {
             try {
-                const response = await fetch(CSV_URL);
-                const data = await response.text();
+                // Adding a timestamp to the URL prevents the browser from showing old data
+                const response = await fetch(CSV_URL + "&t=" + new Date().getTime());
+                const csvData = await response.text();
                 
-                // This splits the CSV rows correctly even if there are commas in the text
-                const rows = data.split(/\r?\n/).map(row => {
+                // Parse CSV rows
+                const rows = csvData.split(/\r?\n/).map(row => {
                     const matches = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
                     return matches ? matches.map(m => m.replace(/^"|"$/g, '')) : [];
                 });
 
                 const feed = document.getElementById("feed");
-                feed.innerHTML = "";
+                const reports = rows.slice(1).reverse(); // Newest first
 
-                // Remove header row and reverse to show newest first
-                const reportRows = rows.slice(1).reverse();
-
-                if (reportRows.length === 0 || (reportRows.length === 1 && reportRows[0].length < 2)) {
-                    feed.innerHTML = "<div class='no-data'>No reports found in the spreadsheet yet.</div>";
-                    return;
+                if (reports.length === 0 || reports[0].length < 2) {
+                    feed.innerHTML = "<div class='no-data'>No reports currently active.</div>";
+                } else {
+                    let cardsHtml = "";
+                    reports.forEach(cols => {
+                        if(cols.length < 5) return;
+                        cardsHtml += `
+                            <div class="card">
+                                <img src="${cols[4]}" onclick="window.open('${cols[4]}')">
+                                <div class="info">
+                                    <span class="badge">${cols[1]}</span>
+                                    <h2>📍 ${cols[2]}</h2>
+                                    <p>${cols[3] || 'No extra details provided.'}</p>
+                                    <small style="color:#7f8c8d">Reported: ${cols[0]}</small>
+                                </div>
+                            </div>`;
+                    });
+                    feed.innerHTML = cardsHtml;
                 }
-
-                reportRows.forEach(cols => {
-                    if(cols.length < 5) return;
-
-                    // Mapping: 0:Timestamp, 1:Type, 2:Location, 3:Details, 4:ImageURL
-                    feed.innerHTML += `
-                        <div class="card">
-                            <a href="${cols[4]}" target="_blank">
-                                <img src="${cols[4]}" onerror="this.src='https://via.placeholder.com/180x130?text=No+Image'">
-                            </a>
-                            <div class="details">
-                                <span class="badge">${cols[1]}</span>
-                                <h2>📍 ${cols[2]}</h2>
-                                <p>${cols[3] || 'No additional details.'}</p>
-                                <small>Reported on: ${cols[0]}</small>
-                            </div>
-                        </div>
-                    `;
-                });
-            } catch (error) {
-                console.error("Error loading CSV:", error);
-                document.getElementById("feed").innerHTML = "Error loading data. Make sure 'Publish to Web' is set to 'CSV'.";
+                document.getElementById("status").innerText = "● LIVE - Last Sync: " + new Date().toLocaleTimeString();
+            } catch (err) {
+                console.error("Sync error:", err);
             }
         }
 
-        // Auto-refresh every 30 seconds
-        loadFeed();
-        setInterval(loadFeed, 30000);
+        // Run every 5 seconds for a "live" feel
+        updateDashboard();
+        setInterval(updateDashboard, 5000);
     </script>
 </body>
 </html>
