@@ -2,66 +2,88 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tipas Admin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tipas Admin Feed</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f0f2f5; padding: 40px; }
-        .container { max-width: 900px; margin: auto; }
-        .report-card { background: white; display: flex; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
-        .report-card img { width: 250px; height: 200px; object-fit: cover; }
-        .report-content { padding: 20px; flex: 1; }
-        .badge { background: #ff4757; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; }
-        h1 { color: #2f3542; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #1c1e21; }
+        .container { max-width: 800px; margin: auto; }
+        h1 { color: #007bff; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .card { 
+            background: white; border-radius: 15px; padding: 15px; margin-bottom: 20px; 
+            display: flex; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            align-items: center;
+        }
+        .card img { width: 180px; height: 130px; object-fit: cover; border-radius: 12px; border: 1px solid #eee; }
+        .details { flex: 1; }
+        .badge { 
+            background: #e74c3c; color: white; padding: 4px 10px; 
+            border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;
+        }
+        h2 { margin: 10px 0 5px 0; font-size: 1.2rem; }
+        p { margin: 5px 0; color: #4b4b4b; line-height: 1.4; }
+        small { color: #90949c; font-size: 0.8rem; }
+        .no-data { text-align: center; padding: 50px; color: #888; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>🚨 Barangay Tipas: Live Incident Feed</h1>
-        <div id="admin-feed">Waiting for reports...</div>
+        <h1>🚨 Tipas Incident Command Center</h1>
+        <div id="feed">Loading latest reports from Google Sheets...</div>
     </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <script>
+        // Your specific CSV Link
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSk8FzJA22kp4__EJhyYXlAzZ7lMPeLBFRBQ3QaHmml3usecNfpyrEwVLXSMBnOFSJt_WRbJAakgYtU/pub?output=csv";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyDeKvRKTnlAfRGMQWbf2OQ3hkPmhQ5Z5cQ",
-        authDomain: "actfast-tipas.firebaseapp.com",
-        projectId: "actfast-tipas",
-        storageBucket: "actfast-tipas.firebasestorage.app",
-        messagingSenderId: "848943253174",
-        appId: "1:848943253174:web:444d5c8f63534803dec817"
-    };
+        async function loadFeed() {
+            try {
+                const response = await fetch(CSV_URL);
+                const data = await response.text();
+                
+                // This splits the CSV rows correctly even if there are commas in the text
+                const rows = data.split(/\r?\n/).map(row => {
+                    const matches = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                    return matches ? matches.map(m => m.replace(/^"|"$/g, '')) : [];
+                });
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const reportsRef = ref(db, 'reports');
+                const feed = document.getElementById("feed");
+                feed.innerHTML = "";
 
-    onValue(reportsRef, (snapshot) => {
-        const data = snapshot.val();
-        const feed = document.getElementById("admin-feed");
-        feed.innerHTML = "";
+                // Remove header row and reverse to show newest first
+                const reportRows = rows.slice(1).reverse();
 
-        if (!data) {
-            feed.innerHTML = "<h3>No active reports.</h3>";
-            return;
+                if (reportRows.length === 0 || (reportRows.length === 1 && reportRows[0].length < 2)) {
+                    feed.innerHTML = "<div class='no-data'>No reports found in the spreadsheet yet.</div>";
+                    return;
+                }
+
+                reportRows.forEach(cols => {
+                    if(cols.length < 5) return;
+
+                    // Mapping: 0:Timestamp, 1:Type, 2:Location, 3:Details, 4:ImageURL
+                    feed.innerHTML += `
+                        <div class="card">
+                            <a href="${cols[4]}" target="_blank">
+                                <img src="${cols[4]}" onerror="this.src='https://via.placeholder.com/180x130?text=No+Image'">
+                            </a>
+                            <div class="details">
+                                <span class="badge">${cols[1]}</span>
+                                <h2>📍 ${cols[2]}</h2>
+                                <p>${cols[3] || 'No additional details.'}</p>
+                                <small>Reported on: ${cols[0]}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error loading CSV:", error);
+                document.getElementById("feed").innerHTML = "Error loading data. Make sure 'Publish to Web' is set to 'CSV'.";
+            }
         }
 
-        Object.values(data).reverse().forEach(report => {
-            feed.innerHTML += `
-                <div class="report-card">
-                    <img src="${report.imageUrl}" onclick="window.open('${report.imageUrl}')">
-                    <div class="report-content">
-                        <span class="badge">${report.type.toUpperCase()}</span>
-                        <h2 style="margin: 10px 0;">📍 ${report.location}</h2>
-                        <p>${report.description}</p>
-                        <small style="color: #a4b0be;">${report.timestamp}</small>
-                    </div>
-                </div>
-            `;
-        });
-    });
-</script>
+        // Auto-refresh every 30 seconds
+        loadFeed();
+        setInterval(loadFeed, 30000);
+    </script>
 </body>
 </html>
