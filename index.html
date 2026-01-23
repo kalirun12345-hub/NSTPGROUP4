@@ -3,78 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ActFast sa Tipas</title>
+    <title>ActFast sa Tipas - Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #007bff; /* Friendly Social Blue */
-            --danger-color: #ff4757;
-            --bg-color: #f7f8fa;
-            --text-main: #2f3542;
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-main);
-            margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center;
-        }
-
-        .app-card { 
-            width: 100%; max-width: 450px; 
-            background: white; border-radius: 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-
-        .header {
-            padding: 20px; background: white; border-bottom: 1px solid #eee;
-            text-align: center;
-        }
-
-        .header h2 { margin: 0; color: var(--primary-color); font-size: 1.5rem; }
-        .header p { margin: 5px 0 0; font-size: 0.85rem; color: #747d8c; }
-
+        :root { --primary-color: #007bff; --bg-color: #f7f8fa; --text-main: #2f3542; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .app-card { width: 100%; max-width: 450px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; }
+        .header { padding: 20px; background: white; border-bottom: 1px solid #eee; text-align: center; }
+        .header h2 { margin: 0; color: var(--primary-color); }
         .content { padding: 20px; }
-
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: #57606f; }
-        
-        input, select, textarea { 
-            width: 100%; padding: 12px; border: 2px solid #edeff2; border-radius: 12px; 
-            font-size: 1rem; transition: 0.2s; outline: none; box-sizing: border-box;
-        }
-
-        input:focus, textarea:focus { border-color: var(--primary-color); }
-
-        /* Modern Upload Area */
-        .photo-upload-box {
-            border: 2px dashed #ced6e0; border-radius: 12px;
-            padding: 20px; text-align: center; cursor: pointer;
-            margin-bottom: 15px; background: #fafafa; transition: 0.2s;
-        }
-        .photo-upload-box:hover { background: #f1f2f6; border-color: var(--primary-color); }
-        .photo-upload-box span { font-size: 0.8rem; color: #747d8c; display: block; margin-top: 5px; }
-
-        #preview-img { 
-            width: 100%; border-radius: 12px; margin-top: 10px; display: none; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .btn-submit { 
-            background: var(--primary-color); color: white; border: none; 
-            width: 100%; padding: 15px; border-radius: 12px; 
-            font-size: 1rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-            transition: transform 0.1s, background 0.2s;
-        }
-
-        .btn-submit:active { transform: scale(0.98); }
-        .btn-submit:hover { background: #0069d9; }
-
-        /* Social Media Style Feed Item (Mockup) */
-        .feed-hint { font-size: 0.8rem; text-align: center; color: #a4b0be; margin-top: 20px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #edeff2; border-radius: 12px; font-size: 1rem; box-sizing: border-box; outline: none; }
+        .photo-upload-box { border: 2px dashed #ced6e0; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; background: #fafafa; margin-bottom: 15px; }
+        #preview-img { width: 100%; border-radius: 12px; margin-top: 10px; display: none; }
+        .btn-submit { background: var(--primary-color); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -103,64 +46,80 @@
 
             <div class="input-group">
                 <label>Details</label>
-                <textarea id="desc" rows="2" placeholder="Tell us more about the situation..."></textarea>
+                <textarea id="desc" rows="2" placeholder="Tell us more..."></textarea>
             </div>
 
-            <label style="font-size: 0.9rem; font-weight: 600; color: #57606f; display: block; margin-bottom: 8px;">Capture Evidence</label>
             <div class="photo-upload-box" onclick="document.getElementById('file').click()">
                 <strong id="upload-status">📸 Tap to Open Camera</strong>
-                <span>Barangay officials need a photo to act fast.</span>
                 <img id="preview-img" src="">
             </div>
             
             <input type="file" id="file" accept="image/*" capture="environment" hidden onchange="showPreview()">
-
             <button class="btn-submit" onclick="submitReport()">Post to Barangay Feed</button>
         </div>
     </div>
 
-    <p class="feed-hint">Your report will be sent directly to Tipas Command Center.</p>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-<script>
-    function showPreview() {
+    const firebaseConfig = {
+        apiKey: "AIzaSyDeKvRKTnlAfRGMQWbf2OQ3hkPmhQ5Z5cQ",
+        authDomain: "actfast-tipas.firebaseapp.com",
+        projectId: "actfast-tipas",
+        storageBucket: "actfast-tipas.firebasestorage.app",
+        messagingSenderId: "848943253174",
+        appId: "1:848943253174:web:444d5c8f63534803dec817"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.showPreview = function() {
         const file = document.getElementById("file").files[0];
         const preview = document.getElementById("preview-img");
-        const status = document.getElementById("upload-status");
-
         if (file) {
             preview.src = URL.createObjectURL(file);
             preview.style.display = "block";
-            status.innerText = "✅ Photo Attached";
+            document.getElementById("upload-status").innerText = "✅ Photo Attached";
         }
     }
 
-    function submitReport() {
+    window.submitReport = function() {
         const fileInput = document.getElementById("file");
         const type = document.getElementById("type").value;
-        const location = document.getElementById("loc").value;
+        const locationVal = document.getElementById("loc").value;
+        const desc = document.getElementById("desc").value;
 
-        if (!fileInput.files[0] || !location) {
+        if (!fileInput.files[0] || !locationVal) {
             alert("Please take a photo and enter the location.");
             return;
         }
 
-        // Logic for Cloudinary
         const formData = new FormData();
         formData.append("file", fileInput.files[0]);
-        formData.append("upload_preset", "YOUR_UPLOAD_PRESET"); 
+        formData.append("upload_preset", "YOUR_CLOUDINARY_PRESET"); // UPDATE THIS
 
-        fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
+        fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", { // UPDATE THIS
             method: "POST",
             body: formData
         })
         .then(res => res.json())
-        .then(data => {
-            alert("Success! Your report is now on the feed. Help is on the way.");
-            location.reload(); // Refresh to clear form
-        })
-        .catch(err => alert("Something went wrong. Please check your connection."));
+        .then(cloudinaryData => {
+            const reportsRef = ref(db, 'reports');
+            const newReportRef = push(reportsRef);
+            set(newReportRef, {
+                type,
+                location: locationVal,
+                description: desc,
+                imageUrl: cloudinaryData.secure_url,
+                timestamp: new Date().toLocaleString()
+            }).then(() => {
+                alert("Success! Reported.");
+                location.reload();
+            });
+        });
     }
 </script>
-
 </body>
 </html>
