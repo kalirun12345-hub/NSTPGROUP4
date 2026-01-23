@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - ActFast Tipas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f8fa; margin: 0; padding: 20px; }
+        .admin-container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #2f3542; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        
+        .report-card {
+            background: white; border-radius: 15px; padding: 15px;
+            margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex; gap: 20px; align-items: start;
+        }
+
+        .report-img {
+            width: 150px; height: 150px; object-fit: cover;
+            border-radius: 10px; cursor: pointer;
+        }
+
+        .report-info { flex: 1; }
+        .badge {
+            display: inline-block; padding: 4px 8px; border-radius: 5px;
+            font-size: 0.75rem; font-weight: bold; text-transform: uppercase;
+            background: #e1e8f0; margin-bottom: 10px;
+        }
+        .type-fire { background: #ff4757; color: white; }
+        .type-accident { background: #ffa502; color: white; }
+
+        .location { font-weight: 700; color: #007bff; margin-bottom: 5px; }
+        .details { color: #57606f; font-size: 0.9rem; }
+        .timestamp { font-size: 0.75rem; color: #a4b0be; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <h1>🚨 Incident Command Center</h1>
+        <div id="reports-feed">
+            <p>Loading reports...</p>
+        </div>
+    </div>
+
+    <script>
+        // MOCK DATA: In a real app, you would use fetch() to get this from your database
+        const mockReports = [
+            {
+                type: "Fire",
+                location: "Block 12, Tipas St.",
+                details: "Small electrical fire noticed near the post.",
+                imageUrl: "https://images.unsplash.com/photo-1542353436-312f0ee594cd?auto=format&fit=crop&w=300",
+                time: "2 mins ago"
+            },
+            {
+                type: "Accident",
+                location: "Main Intersection",
+                details: "Two motorbikes collided. Need assistance.",
+                imageUrl: "https://images.unsplash.com/photo-1599395116120-6927a3dcc445?auto=format&fit=crop&w=300",
+                time: "15 mins ago"
+            }
+        ];
+
+        function renderReports(reports) {
+            const container = document.getElementById('reports-feed');
+            container.innerHTML = '';
+
+            reports.forEach(report => {
+                const card = document.createElement('div');
+                card.className = 'report-card';
+                
+                card.innerHTML = `
+                    <img src="${report.imageUrl}" class="report-img" onclick="window.open('${report.imageUrl}')">
+                    <div class="report-info">
+                        <span class="badge ${report.type === 'Fire' ? 'type-fire' : 'type-accident'}">${report.type}</span>
+                        <div class="location">📍 ${report.location}</div>
+                        <div class="details">${report.details}</div>
+                        <div class="timestamp">Reported: ${report.time}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Initial load
+        window.onload = () => renderReports(mockReports);
+    </script>
+</body>
+</html>
