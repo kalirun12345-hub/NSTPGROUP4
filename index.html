@@ -3,60 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ActFast sa Tipas</title>
+    <title>ActFast sa Tipas - Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #007bff;
-            --bg-color: #f7f8fa;
-            --text-main: #2f3542;
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-main);
-            margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center;
-        }
-
-        .app-card { 
-            width: 100%; max-width: 450px; 
-            background: white; border-radius: 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-
+        :root { --primary-color: #007bff; --bg-color: #f7f8fa; --text-main: #2f3542; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .app-card { width: 100%; max-width: 450px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; }
         .header { padding: 20px; background: white; border-bottom: 1px solid #eee; text-align: center; }
         .header h2 { margin: 0; color: var(--primary-color); font-size: 1.5rem; }
-        .header p { margin: 5px 0 0; font-size: 0.85rem; color: #747d8c; }
-
         .content { padding: 20px; }
-
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: #57606f; }
-        
-        input, select, textarea { 
-            width: 100%; padding: 12px; border: 2px solid #edeff2; border-radius: 12px; 
-            font-size: 1rem; outline: none; box-sizing: border-box;
-        }
-
-        .photo-upload-box {
-            border: 2px dashed #ced6e0; border-radius: 12px;
-            padding: 20px; text-align: center; cursor: pointer;
-            margin-bottom: 15px; background: #fafafa;
-        }
-
+        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #edeff2; border-radius: 12px; font-size: 1rem; outline: none; box-sizing: border-box; width: 100%; }
+        .photo-upload-box { border: 2px dashed #ced6e0; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; background: #fafafa; margin-bottom: 15px; }
         #preview-img { width: 100%; border-radius: 12px; margin-top: 10px; display: none; }
-
-        .btn-submit { 
-            background: var(--primary-color); color: white; border: none; 
-            width: 100%; padding: 15px; border-radius: 12px; 
-            font-size: 1rem; font-weight: 700; cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-submit { background: var(--primary-color); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .btn-submit:disabled { background: #a4b0be; }
     </style>
 </head>
 <body>
@@ -64,12 +26,12 @@
     <div class="app-card">
         <div class="header">
             <h2>📢 ActFast sa Tipas</h2>
-            <p>Report an incident directly to the Barangay.</p>
+            <p>Help the Barangay. Report an incident.</p>
         </div>
 
         <div class="content">
             <div class="input-group">
-                <label>What happened?</label>
+                <label>Incident Type</label>
                 <select id="type">
                     <option value="Accident">🚑 Accident</option>
                     <option value="Fallen Tree">🌳 Fallen Tree / Debris</option>
@@ -84,8 +46,8 @@
             </div>
 
             <div class="input-group">
-                <label>Additional Details</label>
-                <textarea id="desc" rows="2" placeholder="Describe the situation..."></textarea>
+                <label>Details</label>
+                <textarea id="desc" rows="2" placeholder="Briefly describe the situation..."></textarea>
             </div>
 
             <div class="photo-upload-box" onclick="document.getElementById('file').click()">
@@ -94,36 +56,31 @@
             </div>
             
             <input type="file" id="file" accept="image/*" capture="environment" hidden onchange="showPreview()">
-
             <button class="btn-submit" id="submitBtn" onclick="submitReport()">Post to Barangay Feed</button>
         </div>
     </div>
 
     <script>
-        const IMGBB_API_KEY = "f9aa18bd6a2de697cac458627361d7f6";
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzwW9qSrDqxEYok6q3B43w8VBVvsHf8HIMzKZ9wC2WkYqqNkCQL-fkJfKQ0LT9F5Xv/exec";
+        const IMGBB_KEY = "f9aa18bd6a2de697cac458627361d7f6";
+        const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwzwW9qSrDqxEYok6q3B43w8VBVvsHf8HIMzKZ9wC2WkYqqNkCQL-fkJfKQ0LT9F5Xv/exec";
 
         function showPreview() {
             const file = document.getElementById("file").files[0];
             const preview = document.getElementById("preview-img");
-            const status = document.getElementById("upload-status");
-
             if (file) {
                 preview.src = URL.createObjectURL(file);
                 preview.style.display = "block";
-                status.innerText = "✅ Photo Attached";
+                document.getElementById("upload-status").innerText = "✅ Photo Attached";
             }
         }
 
         async function submitReport() {
             const fileInput = document.getElementById("file");
-            const type = document.getElementById("type").value;
-            const locationVal = document.getElementById("loc").value;
-            const desc = document.getElementById("desc").value;
+            const loc = document.getElementById("loc").value;
             const btn = document.getElementById("submitBtn");
 
-            if (!fileInput.files[0] || !locationVal) {
-                alert("Please provide a photo and location.");
+            if (!fileInput.files[0] || !loc) {
+                alert("Please take a photo and enter the location.");
                 return;
             }
 
@@ -132,38 +89,30 @@
 
             try {
                 // 1. Upload to ImgBB
-                const imgFormData = new FormData();
-                imgFormData.append("image", fileInput.files[0]);
-
-                const imgResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                    method: "POST",
-                    body: imgFormData
-                });
-                const imgResult = await imgResponse.json();
-                const imageUrl = imgResult.data.url;
+                const imgForm = new FormData();
+                imgForm.append("image", fileInput.files[0]);
+                const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: imgForm });
+                const imgJson = await imgRes.json();
+                const imageUrl = imgJson.data.url;
 
                 // 2. Send to Google Sheets
                 const reportData = {
-                    type: type,
-                    location: locationVal,
-                    description: desc,
+                    type: document.getElementById("type").value,
+                    location: loc,
+                    description: document.getElementById("desc").value,
                     imageUrl: imageUrl
                 };
 
-                await fetch(GOOGLE_SCRIPT_URL, {
+                await fetch(SHEETS_URL, {
                     method: "POST",
                     mode: "no-cors",
-                    cache: "no-cache",
-                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(reportData)
                 });
 
-                alert("Success! Your report has been sent to the Barangay Sheet.");
+                alert("Success! The Barangay has received your report.");
                 location.reload();
-
-            } catch (error) {
-                console.error(error);
-                alert("An error occurred. Please try again.");
+            } catch (err) {
+                alert("Error sending report. Please try again.");
                 btn.disabled = false;
                 btn.innerText = "Post to Barangay Feed";
             }
