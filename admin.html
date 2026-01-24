@@ -2,6 +2,8 @@
 <html>
 <head>
   <title>Tipas Admin Dashboard</title>
+
+  <!-- Mapbox -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 
@@ -49,81 +51,99 @@
 </div>
 
 <script>
-const MAPBOX_TOKEN = "YOUR_MAPBOX_TOKEN";
-const API_URL = "YOUR_WEBAPP_URL";
+/* ================= CONFIG ================= */
+const MAPBOX_TOKEN = "pk.eyJ1IjoiYW51Ymlzczc3OCIsImEiOiJjbWtyb2Vkd3AxM3NzM2hzYTQwamIxNHliIn0.mo5XWD4HZWVEpGKf0Gf-nQ";
+const API_URL = "https://script.google.com/macros/s/AKfycbx-cWczqUZG34yIneZti_jMDSGZ_qcVvfA6tVGynnxe4eyomlNrVucd5mK7_T4ki3Hc/exec";
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
+/* ================= STATUS UPDATE ================= */
 async function updateStatus(rowIndex, status) {
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "updateStatus",
-      rowIndex: rowIndex,
-      status: status
-    })
-  });
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "updateStatus",
+        rowIndex: rowIndex,
+        status: status
+      })
+    });
 
-  updateDashboard();
+    updateDashboard();
+
+  } catch (err) {
+    alert("Failed to update status");
+    console.error(err);
+  }
 }
 
+/* ================= DASHBOARD ================= */
 async function updateDashboard() {
-  const res = await fetch(API_URL + "?t=" + Date.now());
-  const reports = await res.json();
+  try {
+    const res = await fetch(API_URL + "?t=" + Date.now());
+    const reports = await res.json();
 
-  const feed = document.getElementById("feed");
-  let html = "";
+    const feed = document.getElementById("feed");
+    let html = "";
 
-  const reversed = [...reports].reverse();
+    const reversed = [...reports].reverse();
 
-  reversed.forEach((r, i) => {
-    const mapId = "map-" + i;
+    reversed.forEach((r, i) => {
+      const mapId = "map-" + i;
 
-    let badgeClass = "pending";
-    if (r.status === "In Progress") badgeClass = "progress";
-    if (r.status === "Resolved") badgeClass = "resolved";
+      let badgeClass = "pending";
+      if (r.status === "In Progress") badgeClass = "progress";
+      if (r.status === "Resolved") badgeClass = "resolved";
 
-    html += `
-      <div class="card">
-        <div>
-          ${r.imageUrl ? `<img src="${r.imageUrl}">` : ""}
-        </div>
+      html += `
+        <div class="card">
+          <div>
+            ${r.imageUrl ? `<img src="${r.imageUrl}" onclick="window.open('${r.imageUrl}', '_blank')">` : ""}
+          </div>
 
-        <div>
-          <span class="badge ${badgeClass}">${r.status}</span>
-          <h3>📍 ${r.location}</h3>
-          <p><b>${r.type}</b></p>
-          <p>${r.details || ""}</p>
-          <small>${r.timestamp}</small>
+          <div>
+            <span class="badge ${badgeClass}">${r.status || "Pending"}</span>
+            <h3>📍 ${r.location}</h3>
+            <p><b>${r.type}</b></p>
+            <p>${r.details || ""}</p>
+            <small>${r.timestamp}</small>
 
-          <div class="actions" style="margin-top:10px;">
-            <button class="btn-progress" onclick="updateStatus(${r.rowIndex}, 'In Progress')">In Progress</button>
-            <button class="btn-resolve" onclick="updateStatus(${r.rowIndex}, 'Resolved')">Resolved</button>
+            <div class="actions" style="margin-top:10px;">
+              <button class="btn-progress" onclick="updateStatus(${r.rowIndex}, 'In Progress')">In Progress</button>
+              <button class="btn-resolve" onclick="updateStatus(${r.rowIndex}, 'Resolved')">Resolved</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="mapbox" id="${mapId}"></div>
           </div>
         </div>
+      `;
+    });
 
-        <div>
-          <div class="mapbox" id="${mapId}"></div>
-        </div>
-      </div>
-    `;
-  });
+    feed.innerHTML = html;
 
-  feed.innerHTML = html;
+    // Init maps
+    reversed.forEach((r, i) => {
+      if (r.lat && r.lng) {
+        const map = new mapboxgl.Map({
+          container: "map-" + i,
+          style: "mapbox://styles/mapbox/light-v11",
+          center: [r.lng, r.lat],
+          zoom: 15,
+          interactive: false
+        });
 
-  reversed.forEach((r, i) => {
-    if (r.lat && r.lng) {
-      const map = new mapboxgl.Map({
-        container: "map-" + i,
-        style: "mapbox://styles/mapbox/light-v11",
-        center: [r.lng, r.lat],
-        zoom: 15,
-        interactive: false
-      });
+        new mapboxgl.Marker()
+          .setLngLat([r.lng, r.lat])
+          .addTo(map);
+      }
+    });
 
-      new mapboxgl.Marker().setLngLat([r.lng, r.lat]).addTo(map);
-    }
-  });
+  } catch (err) {
+    console.error("Dashboard error:", err);
+    document.getElementById("feed").innerHTML = "<p>Error loading data.</p>";
+  }
 }
 
 updateDashboard();
