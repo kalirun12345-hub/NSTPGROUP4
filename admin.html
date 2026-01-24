@@ -3,107 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <title>Tipas Admin Dashboard</title>
+
+    <!-- Mapbox -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+
     <style>
         body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
+        .container { max-width: 1000px; margin: auto; }
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; margin-bottom: 20px; }
         #status { color: #2ecc71; font-weight: bold; font-size: 0.9rem; }
-        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 20px; display: flex; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .card img { width: 220px; height: 160px; object-fit: cover; border-radius: 10px; cursor: pointer; }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 240px 1fr 260px;
+            gap: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .card img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
         .info { flex: 1; }
-        .badge { background: #e74c3c; color: white; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; }
-        h2 { margin: 10px 0; }
+
+        .mapbox {
+            width: 100%;
+            height: 160px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .badge {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+
+        h2 { margin: 5px 0; font-size: 1.1rem; }
+
         .no-data { text-align: center; color: #888; margin-top: 50px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚨 Live Stream! 🚨</h1>
-            <div id="status">Syncing...</div>
-        </header>
-        <div id="feed">Checking for new reports...</div>
-    </div>
+<div class="container">
+    <header>
+        <h1>🚨 Live Stream! 🚨</h1>
+        <div id="status">Syncing...</div>
+    </header>
 
-    <script>
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSk8FzJA22kp4__EJhyYXlAzZ7lMPeLBFRBQ3QaHmml3usecNfpyrEwVLXSMBnOFSJt_WRbJAakgYtU/pub?output=csv";
+    <div id="feed">Checking for new reports...</div>
+</div>
 
-        // Split CSV row into columns, handling quoted fields containing commas
-        function splitCsvLine(line) {
-            // Split on commas that are not inside quotes
-            const parts = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-            return parts.map(p => {
-                // Remove surrounding quotes if any, and trim spaces
-                let s = p.trim();
-                if (s.startsWith('"') && s.endsWith('"')) {
-                    s = s.slice(1, -1).replace(/""/g, '"');
-                }
-                return s;
-            });
+<script>
+/* ================= CONFIG ================= */
+const MAPBOX_TOKEN = "pk.eyJ1IjoiYW51Ymlzczc3OCIsImEiOiJjbWtyb2Vkd3AxM3NzM2hzYTQwamIxNHliIn0.mo5XWD4HZWVEpGKf0Gf-nQ";
+
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSk8FzJA22kp4__EJhyYXlAzZ7lMPeLBFRBQ3QaHmml3usecNfpyrEwVLXSMBnOFSJt_WRbJAakgYtU/pub?output=csv";
+
+mapboxgl.accessToken = MAPBOX_TOKEN;
+
+/* ================= CSV PARSER ================= */
+function splitCsvLine(line) {
+    const parts = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+    return parts.map(p => {
+        let s = p.trim();
+        if (s.startsWith('"') && s.endsWith('"')) {
+            s = s.slice(1, -1).replace(/""/g, '"');
+        }
+        return s;
+    });
+}
+
+/* ================= UPDATE DASHBOARD ================= */
+async function updateDashboard() {
+    try {
+        const response = await fetch(CSV_URL + "&t=" + Date.now());
+        const csvData = await response.text();
+
+        const rawLines = csvData.split(/\r?\n/);
+        const rows = rawLines
+            .map(line => splitCsvLine(line))
+            .filter(cols => cols.some(c => c && c.trim() !== ""));
+
+        const feed = document.getElementById("feed");
+
+        if (rows.length <= 1) {
+            feed.innerHTML = "<div class='no-data'>No reports currently active.</div>";
+            document.getElementById("status").innerText = "● LIVE - " + new Date().toLocaleTimeString();
+            return;
         }
 
-        async function updateDashboard() {
-            try {
-                // Prevent caching
-                const response = await fetch(CSV_URL + "&t=" + new Date().getTime());
-                const csvData = await response.text();
+        const reports = rows.slice(1).reverse();
 
-                // Break into non-empty lines
-                const rawLines = csvData.split(/\r?\n/);
+        let cardsHtml = "";
 
-                // Parse rows to arrays, skipping any fully-empty lines
-                const rows = rawLines
-                    .map(line => splitCsvLine(line))
-                    .filter(cols => cols.length > 0 && cols.some(c => c && c.trim() !== ""));
+        reports.forEach((cols, index) => {
+            // NEW COLUMN MAPPING
+            const timestamp = cols[0] || "";
+            const type = cols[1] || "Report";
+            const location = cols[2] || "Unknown location";
+            const details = cols[3] || "";
+            const imageUrl = cols[4] || "";
+            const lat = parseFloat(cols[5]);
+            const lng = parseFloat(cols[6]);
 
-                const feed = document.getElementById("feed");
+            const mapId = "map-" + index;
 
-                // If no data or only header present
-                if (rows.length <= 1) {
-                    feed.innerHTML = "<div class='no-data'>No reports currently active.</div>";
-                    document.getElementById("status").innerText = "● LIVE - Last Sync: " + new Date().toLocaleTimeString();
-                    return;
-                }
+            cardsHtml += `
+                <div class="card">
+                    <div>
+                        ${imageUrl ? `<img src="${imageUrl}" onclick="window.open('${imageUrl}', '_blank')">` : "<div>No Image</div>"}
+                    </div>
 
-                // Assume first row is header; newest entries may be at bottom, so reverse to show newest first
-                const header = rows[0];
-                const reports = rows.slice(1).reverse();
+                    <div class="info">
+                        <span class="badge">${type}</span>
+                        <h2>📍 ${location}</h2>
+                        <p>${details}</p>
+                        <small style="color:#7f8c8d">Reported: ${timestamp}</small>
+                        <br>
+                        <small>Lat: ${lat || "?"} | Lng: ${lng || "?"}</small>
+                    </div>
 
-                let cardsHtml = "";
-                reports.forEach(cols => {
-                    // Ensure we have enough columns; adjust indices if your sheet structure differs
-                    // Current mapping: [0]=Reported time, [1]=Badge/Severity, [2]=Location, [3]=Details, [4]=ImageURL
-                    if (cols.length < 3) return;
+                    <div>
+                        <div class="mapbox" id="${mapId}"></div>
+                    </div>
+                </div>
+            `;
+        });
 
-                    const reportedAt = cols[0] || 'Unknown time';
-                    const badge = cols[1] || 'Report';
-                    const location = cols[2] || 'Location not provided';
-                    const details = cols[3] || 'No extra details provided.';
-                    const imageUrl = cols[4] || '';
+        feed.innerHTML = cardsHtml;
 
-                    cardsHtml += `
-                        <div class="card">
-                            ${imageUrl ? `<img src="${imageUrl}" onclick="window.open('${imageUrl}', '_blank', 'noopener')">` : ''}
-                            <div class="info">
-                                <span class="badge">${badge}</span>
-                                <h2>📍 ${location}</h2>
-                                <p>${details}</p>
-                                <small style="color:#7f8c8d">Reported: ${reportedAt}</small>
-                            </div>
-                        </div>`;
+        // Init maps AFTER DOM update
+        reports.forEach((cols, index) => {
+            const lat = parseFloat(cols[5]);
+            const lng = parseFloat(cols[6]);
+            const mapId = "map-" + index;
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                const map = new mapboxgl.Map({
+                    container: mapId,
+                    style: "mapbox://styles/mapbox/light-v11",
+                    center: [lng, lat],
+                    zoom: 15,
+                    interactive: false
                 });
 
-                feed.innerHTML = cardsHtml || "<div class='no-data'>No reports currently active.</div>";
-                document.getElementById("status").innerText = "● LIVE - Last Sync: " + new Date().toLocaleTimeString();
-            } catch (err) {
-                console.error("Sync error:", err);
-                document.getElementById("status").innerText = "● OFFLINE - Last attempt: " + new Date().toLocaleTimeString();
-            }
-        }
+                new mapboxgl.Marker({ color: "red" })
+                    .setLngLat([lng, lat])
+                    .addTo(map);
 
-        // Run every 5 seconds for a "live" feel
-        updateDashboard();
-        setInterval(updateDashboard, 5000);
-    </script>
+                map.on("load", () => map.resize());
+            }
+        });
+
+        document.getElementById("status").innerText = "● LIVE - " + new Date().toLocaleTimeString();
+
+    } catch (err) {
+        console.error("Sync error:", err);
+        document.getElementById("status").innerText = "● OFFLINE - " + new Date().toLocaleTimeString();
+    }
+}
+
+updateDashboard();
+setInterval(updateDashboard, 10000); // every 10s (maps are heavier)
+
+</script>
 </body>
 </html>
