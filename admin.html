@@ -71,116 +71,88 @@
 <script>
 /* ================= CONFIG ================= */
 const MAPBOX_TOKEN = "pk.eyJ1IjoiYW51Ymlzczc3OCIsImEiOiJjbWtyb2Vkd3AxM3NzM2hzYTQwamIxNHliIn0.mo5XWD4HZWVEpGKf0Gf-nQ";
-
-const CSV_URL = "https://script.google.com/macros/s/AKfycbwmiHQ-NCbueWX5EEpivvaAOd0B7K8KunO-8Zs_eAmMsGSweTCDAF3Uc-2dLqChAl4O/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwmiHQ-NCbueWX5EEpivvaAOd0B7K8KunO-8Zs_eAmMsGSweTCDAF3Uc-2dLqChAl4O/exec";
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
-/* ================= CSV PARSER ================= */
-function splitCsvLine(line) {
-    const parts = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-    return parts.map(p => {
-        let s = p.trim();
-        if (s.startsWith('"') && s.endsWith('"')) {
-            s = s.slice(1, -1).replace(/""/g, '"');
-        }
-        return s;
-    });
-}
-
 /* ================= UPDATE DASHBOARD ================= */
 async function updateDashboard() {
-    try {
-        const response = await fetch(CSV_URL + "&t=" + Date.now());
-        const csvData = await response.text();
+  try {
+    const response = await fetch(API_URL + "?t=" + Date.now());
+    const reports = await response.json();
 
-        const rawLines = csvData.split(/\r?\n/);
-        const rows = rawLines
-            .map(line => splitCsvLine(line))
-            .filter(cols => cols.some(c => c && c.trim() !== ""));
+    const feed = document.getElementById("feed");
 
-        const feed = document.getElementById("feed");
-
-        if (rows.length <= 1) {
-            feed.innerHTML = "<div class='no-data'>No reports currently active.</div>";
-            document.getElementById("status").innerText = "● LIVE - " + new Date().toLocaleTimeString();
-            return;
-        }
-
-        const reports = rows.slice(1).reverse();
-
-        let cardsHtml = "";
-
-        reports.forEach((cols, index) => {
-            // NEW COLUMN MAPPING
-            const timestamp = cols[0] || "";
-            const type = cols[1] || "Report";
-            const location = cols[2] || "Unknown location";
-            const details = cols[3] || "";
-            const imageUrl = cols[4] || "";
-            const lat = parseFloat(cols[5]);
-            const lng = parseFloat(cols[6]);
-
-            const mapId = "map-" + index;
-
-            cardsHtml += `
-                <div class="card">
-                    <div>
-                        ${imageUrl ? `<img src="${imageUrl}" onclick="window.open('${imageUrl}', '_blank')">` : "<div>No Image</div>"}
-                    </div>
-
-                    <div class="info">
-                        <span class="badge">${type}</span>
-                        <h2>📍 ${location}</h2>
-                        <p>${details}</p>
-                        <small style="color:#7f8c8d">Reported: ${timestamp}</small>
-                        <br>
-                        <small>Lat: ${lat || "?"} | Lng: ${lng || "?"}</small>
-                    </div>
-
-                    <div>
-                        <div class="mapbox" id="${mapId}"></div>
-                    </div>
-                </div>
-            `;
-        });
-
-        feed.innerHTML = cardsHtml;
-
-        // Init maps AFTER DOM update
-        reports.forEach((cols, index) => {
-            const lat = parseFloat(cols[5]);
-            const lng = parseFloat(cols[6]);
-            const mapId = "map-" + index;
-
-            if (!isNaN(lat) && !isNaN(lng)) {
-                const map = new mapboxgl.Map({
-                    container: mapId,
-                    style: "mapbox://styles/mapbox/light-v11",
-                    center: [lng, lat],
-                    zoom: 15,
-                    interactive: false
-                });
-
-                new mapboxgl.Marker({ color: "red" })
-                    .setLngLat([lng, lat])
-                    .addTo(map);
-
-                map.on("load", () => map.resize());
-            }
-        });
-
-        document.getElementById("status").innerText = "● LIVE - " + new Date().toLocaleTimeString();
-
-    } catch (err) {
-        console.error("Sync error:", err);
-        document.getElementById("status").innerText = "● OFFLINE - " + new Date().toLocaleTimeString();
+    if (!reports || reports.length === 0) {
+      feed.innerHTML = "<div class='no-data'>No reports currently active.</div>";
+      document.getElementById("status").innerText = "● LIVE - " + new Date().toLocaleTimeString();
+      return;
     }
+
+    let cardsHtml = "";
+
+    const reversed = [...reports].reverse();
+
+    reversed.forEach((r, index) => {
+      const mapId = "map-" + index;
+
+      cardsHtml += `
+        <div class="card">
+          <div>
+            ${r.imageUrl ? `<img src="${r.imageUrl}" onclick="window.open('${r.imageUrl}', '_blank')">` : "<div>No Image</div>"}
+          </div>
+
+          <div class="info">
+            <span class="badge">${r.type}</span>
+            <h2>📍 ${r.location}</h2>
+            <p>${r.details || ""}</p>
+            <small style="color:#7f8c8d">Reported: ${r.timestamp}</small>
+            <br>
+            <small>Lat: ${r.lat || "?"} | Lng: ${r.lng || "?"}</small>
+          </div>
+
+          <div>
+            <div class="mapbox" id="${mapId}"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    feed.innerHTML = cardsHtml;
+
+    // Init maps AFTER DOM update
+    reversed.forEach((r, index) => {
+      const lat = parseFloat(r.lat);
+      const lng = parseFloat(r.lng);
+      const mapId = "map-" + index;
+
+      if (!isNaN(lat) && !isNaN(lng)) {
+        const map = new mapboxgl.Map({
+          container: mapId,
+          style: "mapbox://styles/mapbox/light-v11",
+          center: [lng, lat],
+          zoom: 15,
+          interactive: false
+        });
+
+        new mapboxgl.Marker({ color: "red" })
+          .setLngLat([lng, lat])
+          .addTo(map);
+
+        map.on("load", () => map.resize());
+      }
+    });
+
+    document.getElementById("status").innerText = "● LIVE - " + new Date().toLocaleTimeString();
+
+  } catch (err) {
+    console.error("Sync error:", err);
+    document.getElementById("status").innerText = "● OFFLINE - " + new Date().toLocaleTimeString();
+  }
 }
 
 updateDashboard();
-setInterval(updateDashboard, 10000); // every 10s (maps are heavier)
-
+setInterval(updateDashboard, 10000);
 </script>
 </body>
 </html>
