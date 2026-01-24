@@ -28,43 +28,76 @@
     <script>
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSk8FzJA22kp4__EJhyYXlAzZ7lMPeLBFRBQ3QaHmml3usecNfpyrEwVLXSMBnOFSJt_WRbJAakgYtU/pub?output=csv";
 
+        // Split CSV row into columns, handling quoted fields containing commas
+        function splitCsvLine(line) {
+            // Split on commas that are not inside quotes
+            const parts = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+            return parts.map(p => {
+                // Remove surrounding quotes if any, and trim spaces
+                let s = p.trim();
+                if (s.startsWith('"') && s.endsWith('"')) {
+                    s = s.slice(1, -1).replace(/""/g, '"');
+                }
+                return s;
+            });
+        }
+
         async function updateDashboard() {
             try {
-                // Adding a timestamp to the URL prevents the browser from showing old data
+                // Prevent caching
                 const response = await fetch(CSV_URL + "&t=" + new Date().getTime());
                 const csvData = await response.text();
-                
-                // Parse CSV rows
-                const rows = csvData.split(/\r?\n/).map(row => {
-                    const matches = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-                    return matches ? matches.map(m => m.replace(/^"|"$/g, '')) : [];
-                });
+
+                // Break into non-empty lines
+                const rawLines = csvData.split(/\r?\n/);
+
+                // Parse rows to arrays, skipping any fully-empty lines
+                const rows = rawLines
+                    .map(line => splitCsvLine(line))
+                    .filter(cols => cols.length > 0 && cols.some(c => c && c.trim() !== ""));
 
                 const feed = document.getElementById("feed");
-                const reports = rows.slice(1).reverse(); // Newest first
 
-                if (reports.length === 0 || reports[0].length < 2) {
+                // If no data or only header present
+                if (rows.length <= 1) {
                     feed.innerHTML = "<div class='no-data'>No reports currently active.</div>";
-                } else {
-                    let cardsHtml = "";
-                    reports.forEach(cols => {
-                        if(cols.length < 5) return;
-                        cardsHtml += `
-                            <div class="card">
-                                <img src="${cols[4]}" onclick="window.open('${cols[4]}')">
-                                <div class="info">
-                                    <span class="badge">${cols[1]}</span>
-                                    <h2>📍 ${cols[2]}</h2>
-                                    <p>${cols[3] || 'No extra details provided.'}</p>
-                                    <small style="color:#7f8c8d">Reported: ${cols[0]}</small>
-                                </div>
-                            </div>`;
-                    });
-                    feed.innerHTML = cardsHtml;
+                    document.getElementById("status").innerText = "● LIVE - Last Sync: " + new Date().toLocaleTimeString();
+                    return;
                 }
+
+                // Assume first row is header; newest entries may be at bottom, so reverse to show newest first
+                const header = rows[0];
+                const reports = rows.slice(1).reverse();
+
+                let cardsHtml = "";
+                reports.forEach(cols => {
+                    // Ensure we have enough columns; adjust indices if your sheet structure differs
+                    // Current mapping: [0]=Reported time, [1]=Badge/Severity, [2]=Location, [3]=Details, [4]=ImageURL
+                    if (cols.length < 3) return;
+
+                    const reportedAt = cols[0] || 'Unknown time';
+                    const badge = cols[1] || 'Report';
+                    const location = cols[2] || 'Location not provided';
+                    const details = cols[3] || 'No extra details provided.';
+                    const imageUrl = cols[4] || '';
+
+                    cardsHtml += `
+                        <div class="card">
+                            ${imageUrl ? `<img src="${imageUrl}" onclick="window.open('${imageUrl}', '_blank', 'noopener')">` : ''}
+                            <div class="info">
+                                <span class="badge">${badge}</span>
+                                <h2>📍 ${location}</h2>
+                                <p>${details}</p>
+                                <small style="color:#7f8c8d">Reported: ${reportedAt}</small>
+                            </div>
+                        </div>`;
+                });
+
+                feed.innerHTML = cardsHtml || "<div class='no-data'>No reports currently active.</div>";
                 document.getElementById("status").innerText = "● LIVE - Last Sync: " + new Date().toLocaleTimeString();
             } catch (err) {
                 console.error("Sync error:", err);
+                document.getElementById("status").innerText = "● OFFLINE - Last attempt: " + new Date().toLocaleTimeString();
             }
         }
 
