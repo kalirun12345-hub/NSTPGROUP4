@@ -1,53 +1,664 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tipas Admin Dashboard</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Mapbox -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 
   <style>
-    body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-    .container { max-width: 1100px; margin: auto; }
-    header { display:flex; justify-content:space-between; border-bottom:2px solid #ccc; margin-bottom:20px; }
-
-    .card {
-      background:white; border-radius:15px; padding:15px; margin-bottom:20px;
-      display:grid; grid-template-columns:240px 1fr 260px; gap:15px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.05);
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
     }
 
-    img { width:100%; height:160px; object-fit:cover; border-radius:10px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .mapbox { width:100%; height:160px; border-radius:10px; border:1px solid #ddd; }
-
-    .badge { padding:4px 10px; border-radius:6px; color:white; font-weight:bold; font-size:12px; }
-    .pending { background:#f1c40f; }
-    .progress { background:#3498db; }
-    .resolved { background:#2ecc71; }
-
-    .actions button {
-      margin-right:6px;
-      padding:6px 10px;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
-      font-weight:bold;
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
     }
 
-    .btn-progress { background:#3498db; color:white; }
-    .btn-resolve { background:#2ecc71; color:white; }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      background: white;
+      border-radius: 16px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-left h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ecfdf5;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--success);
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .refresh-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .last-updated {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-icon {
+      font-size: 1.5rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+
+    /* Filters */
+    .filters-section {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .filters-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px 12px 44px;
+      border: 2px solid var(--gray-200);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-400);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      padding: 10px 18px;
+      border: 2px solid var(--gray-200);
+      background: white;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--primary);
+      background: var(--gray-50);
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Report Cards */
+    .reports-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .report-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      display: grid;
+      grid-template-columns: 200px 1fr 280px;
+      gap: 24px;
+      transition: all 0.3s;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .report-card:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Image Section */
+    .report-image {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--gray-100);
+    }
+
+    .report-image img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .report-image:hover img {
+      transform: scale(1.05);
+    }
+
+    .image-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+      padding: 12px;
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .no-image {
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: var(--gray-300);
+    }
+
+    /* Details Section */
+    .report-details {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-progress {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-resolved {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .report-type {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gray-100);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--gray-700);
+    }
+
+    .report-location {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .report-description {
+      color: var(--gray-600);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .report-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      margin-top: 8px;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-progress {
+      background: var(--info);
+      color: white;
+    }
+
+    .btn-resolve {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-pending {
+      background: var(--gray-200);
+      color: var(--gray-700);
+    }
+
+    /* Map Section */
+    .report-map {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .map-container {
+      width: 100%;
+      height: 180px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--gray-200);
+    }
+
+    .map-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .map-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--gray-100);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--gray-700);
+    }
+
+    .map-btn:hover {
+      background: var(--gray-200);
+    }
+
+    /* Empty State */
+    .empty-state {
+      background: white;
+      border-radius: 16px;
+      padding: 60px 40px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-size: 1.5rem;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      color: var(--gray-500);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--gray-200);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .report-card {
+        grid-template-columns: 160px 1fr 240px;
+        gap: 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .report-card {
+        grid-template-columns: 1fr;
+      }
+
+      .report-image img,
+      .no-image {
+        height: 200px;
+      }
+
+      .map-container {
+        height: 200px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      header {
+        padding: 20px;
+      }
+
+      .header-left h1 {
+        font-size: 1.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-group {
+        width: 100%;
+        flex-wrap: wrap;
+      }
+
+      .filter-btn {
+        flex: 1;
+        min-width: calc(50% - 4px);
+      }
+    }
   </style>
 </head>
 <body>
 <div class="container">
+  <!-- Header -->
   <header>
-    <h1>🚨 Tipas Admin</h1>
-    <div id="status">LIVE</div>
+    <div class="header-left">
+      <h1>
+        <span>🚨</span>
+        <span>Tipas Admin Dashboard</span>
+      </h1>
+      <div class="live-indicator">
+        <div class="live-dot"></div>
+        <span>LIVE</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="last-updated" id="lastUpdated">Updated just now</div>
+      <button class="refresh-btn" onclick="updateDashboard()">
+        <span>🔄</span>
+        <span>Refresh</span>
+      </button>
+    </div>
   </header>
 
-  <div id="feed">Loading...</div>
+  <!-- Statistics -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-label">Total Reports</span>
+        <span class="stat-icon">📊</span>
+      </div>
+      <div class="stat-value" id="totalReports">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-label">Pending</span>
+        <span class="stat-icon">⏳</span>
+      </div>
+      <div class="stat-value" id="pendingCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-label">In Progress</span>
+        <span class="stat-icon">🔄</span>
+      </div>
+      <div class="stat-value" id="progressCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-label">Resolved</span>
+        <span class="stat-icon">✅</span>
+      </div>
+      <div class="stat-value" id="resolvedCount">0</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search by location, type, or description...">
+      </div>
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="Pending">Pending</button>
+        <button class="filter-btn" data-filter="In Progress">In Progress</button>
+        <button class="filter-btn" data-filter="Resolved">Resolved</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reports -->
+  <div id="reportsContainer">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p style="margin-top: 16px; color: var(--gray-500);">Loading reports...</p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -57,9 +668,43 @@ const API_URL = "https://script.google.com/macros/s/AKfycbx-cWczqUZG34yIneZti_jM
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
+let allReports = [];
+let currentFilter = 'all';
+let searchQuery = '';
+
+/* ================= INCIDENT TYPE ICONS ================= */
+const typeIcons = {
+  'Accident': '🚑',
+  'Fallen Tree': '🌳',
+  'Fire': '🔥',
+  'Flood': '💧',
+  'Power Outage': '⚡',
+  'Street Light': '💡',
+  'Other': '❓'
+};
+
+/* ================= TIME AGO ================= */
+function timeAgo(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  
+  return date.toLocaleDateString();
+}
+
 /* ================= STATUS UPDATE ================= */
 async function updateStatus(rowIndex, status) {
   try {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span>';
+
     await fetch(API_URL, {
       method: "POST",
       body: JSON.stringify({
@@ -69,85 +714,236 @@ async function updateStatus(rowIndex, status) {
       })
     });
 
-    updateDashboard();
+    await updateDashboard();
 
   } catch (err) {
-    alert("Failed to update status");
+    alert("Failed to update status. Please try again.");
     console.error(err);
   }
 }
 
-/* ================= DASHBOARD ================= */
+/* ================= RENDER REPORTS ================= */
+function renderReports(reports) {
+  const container = document.getElementById('reportsContainer');
+  
+  if (!reports || reports.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No reports found</h3>
+        <p>There are no incident reports matching your criteria.</p>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '<div class="reports-container">';
+
+  reports.forEach((r, i) => {
+    const mapId = `map-${r.rowIndex || i}`;
+    const status = r.status || 'Pending';
+    const statusClass = status === 'In Progress' ? 'progress' : status.toLowerCase();
+    const icon = typeIcons[r.type] || '❓';
+
+    html += `
+      <div class="report-card" data-status="${status}">
+        <!-- Image -->
+        <div class="report-image" onclick="window.open('${r.imageUrl}', '_blank')">
+          ${r.imageUrl ? 
+            `<img src="${r.imageUrl}" alt="Incident photo">
+             <div class="image-overlay">Click to enlarge</div>` :
+            `<div class="no-image">📷</div>`
+          }
+        </div>
+
+        <!-- Details -->
+        <div class="report-details">
+          <div class="report-header">
+            <span class="report-type">${icon} ${r.type}</span>
+            <span class="status-badge status-${statusClass}">${status}</span>
+          </div>
+
+          <div class="report-location">
+            <span>📍</span>
+            <span>${r.location}</span>
+          </div>
+
+          ${r.description ? `<div class="report-description">${r.description}</div>` : ''}
+
+          <div class="report-meta">
+            <div class="meta-item">
+              <span>🕐</span>
+              <span>${timeAgo(r.timestamp)}</span>
+            </div>
+            ${r.lat && r.lng ? `
+              <div class="meta-item">
+                <span>🗺️</span>
+                <span>${parseFloat(r.lat).toFixed(4)}, ${parseFloat(r.lng).toFixed(4)}</span>
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="action-buttons">
+            ${status === 'Pending' ? `
+              <button class="action-btn btn-progress" onclick="updateStatus(${r.rowIndex}, 'In Progress')">
+                <span>🔄</span> Mark In Progress
+              </button>
+              <button class="action-btn btn-resolve" onclick="updateStatus(${r.rowIndex}, 'Resolved')">
+                <span>✅</span> Resolve
+              </button>
+            ` : status === 'In Progress' ? `
+              <button class="action-btn btn-resolve" onclick="updateStatus(${r.rowIndex}, 'Resolved')">
+                <span>✅</span> Mark Resolved
+              </button>
+              <button class="action-btn btn-pending" onclick="updateStatus(${r.rowIndex}, 'Pending')">
+                <span>⏳</span> Back to Pending
+              </button>
+            ` : `
+              <button class="action-btn btn-pending" onclick="updateStatus(${r.rowIndex}, 'Pending')">
+                <span>⏳</span> Reopen
+              </button>
+            `}
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div class="report-map">
+          <div class="map-container" id="${mapId}"></div>
+          ${r.lat && r.lng ? `
+            <div class="map-actions">
+              <button class="map-btn" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}', '_blank')">
+                📍 Open in Google Maps
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Initialize maps
+  setTimeout(() => {
+    reports.forEach((r, i) => {
+      if (r.lat && r.lng) {
+        const mapId = `map-${r.rowIndex || i}`;
+        try {
+          const map = new mapboxgl.Map({
+            container: mapId,
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [r.lng, r.lat],
+            zoom: 15,
+            interactive: false
+          });
+
+          new mapboxgl.Marker({ color: '#ef4444' })
+            .setLngLat([r.lng, r.lat])
+            .addTo(map);
+        } catch (err) {
+          console.error('Map error:', err);
+        }
+      }
+    });
+  }, 100);
+}
+
+/* ================= UPDATE STATISTICS ================= */
+function updateStatistics(reports) {
+  const total = reports.length;
+  const pending = reports.filter(r => !r.status || r.status === 'Pending').length;
+  const progress = reports.filter(r => r.status === 'In Progress').length;
+  const resolved = reports.filter(r => r.status === 'Resolved').length;
+
+  document.getElementById('totalReports').textContent = total;
+  document.getElementById('pendingCount').textContent = pending;
+  document.getElementById('progressCount').textContent = progress;
+  document.getElementById('resolvedCount').textContent = resolved;
+}
+
+/* ================= FILTER REPORTS ================= */
+function filterReports() {
+  let filtered = allReports;
+
+  // Filter by status
+  if (currentFilter !== 'all') {
+    filtered = filtered.filter(r => (r.status || 'Pending') === currentFilter);
+  }
+
+  // Filter by search query
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    filtered = filtered.filter(r => 
+      r.location.toLowerCase().includes(query) ||
+      r.type.toLowerCase().includes(query) ||
+      (r.description && r.description.toLowerCase().includes(query))
+    );
+  }
+
+  renderReports(filtered);
+}
+
+/* ================= DASHBOARD UPDATE ================= */
 async function updateDashboard() {
   try {
     const res = await fetch(API_URL + "?t=" + Date.now());
     const reports = await res.json();
 
-    const feed = document.getElementById("feed");
-    let html = "";
+    allReports = [...reports].reverse();
+    
+    updateStatistics(allReports);
+    filterReports();
 
-    const reversed = [...reports].reverse();
-
-    reversed.forEach((r, i) => {
-      const mapId = "map-" + i;
-
-      let badgeClass = "pending";
-      if (r.status === "In Progress") badgeClass = "progress";
-      if (r.status === "Resolved") badgeClass = "resolved";
-
-      html += `
-        <div class="card">
-          <div>
-            ${r.imageUrl ? `<img src="${r.imageUrl}" onclick="window.open('${r.imageUrl}', '_blank')">` : ""}
-          </div>
-
-          <div>
-            <span class="badge ${badgeClass}">${r.status || "Pending"}</span>
-            <h3>📍 ${r.location}</h3>
-            <p><b>${r.type}</b></p>
-            <p>${r.details || ""}</p>
-            <small>${r.timestamp}</small>
-
-            <div class="actions" style="margin-top:10px;">
-              <button class="btn-progress" onclick="updateStatus(${r.rowIndex}, 'In Progress')">In Progress</button>
-              <button class="btn-resolve" onclick="updateStatus(${r.rowIndex}, 'Resolved')">Resolved</button>
-            </div>
-          </div>
-
-          <div>
-            <div class="mapbox" id="${mapId}"></div>
-          </div>
-        </div>
-      `;
-    });
-
-    feed.innerHTML = html;
-
-    // Init maps
-    reversed.forEach((r, i) => {
-      if (r.lat && r.lng) {
-        const map = new mapboxgl.Map({
-          container: "map-" + i,
-          style: "mapbox://styles/mapbox/light-v11",
-          center: [r.lng, r.lat],
-          zoom: 15,
-          interactive: false
-        });
-
-        new mapboxgl.Marker()
-          .setLngLat([r.lng, r.lat])
-          .addTo(map);
-      }
-    });
+    // Update last updated time
+    document.getElementById('lastUpdated').textContent = 'Updated just now';
 
   } catch (err) {
     console.error("Dashboard error:", err);
-    document.getElementById("feed").innerHTML = "<p>Error loading data.</p>";
+    document.getElementById('reportsContainer').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <h3>Error loading reports</h3>
+        <p>Please check your connection and try again.</p>
+      </div>
+    `;
   }
 }
 
-updateDashboard();
-setInterval(updateDashboard, 10000);
+/* ================= SEARCH & FILTER HANDLERS ================= */
+document.addEventListener('DOMContentLoaded', () => {
+  // Search
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    filterReports();
+  });
+
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentFilter = e.target.dataset.filter;
+      filterReports();
+    });
+  });
+
+  // Initial load
+  updateDashboard();
+  
+  // Auto-refresh every 30 seconds
+  setInterval(updateDashboard, 30000);
+
+  // Update "time ago" every minute
+  setInterval(() => {
+    const metaItems = document.querySelectorAll('.meta-item span:last-child');
+    allReports.forEach((r, i) => {
+      if (metaItems[i * 2]) {
+        metaItems[i * 2].textContent = timeAgo(r.timestamp);
+      }
+    });
+  }, 60000);
+});
 </script>
 </body>
 </html>
