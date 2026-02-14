@@ -6,34 +6,411 @@
     <title>ActFast sa Tipas - Report</title>
 
     <!-- Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Mapbox GL CSS -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
 
     <style>
-        :root { --primary-color: #007bff; --bg-color: #f7f8fa; --text-main: #2f3542; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .app-card { width: 100%; max-width: 450px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; }
-        .header { padding: 20px; background: white; border-bottom: 1px solid #eee; text-align: center; }
-        .header h2 { margin: 0; color: var(--primary-color); font-size: 1.5rem; }
-        .content { padding: 20px; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: #57606f; }
-        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #edeff2; border-radius: 12px; font-size: 1rem; outline: none; box-sizing: border-box; }
-        .photo-upload-box { border: 2px dashed #ced6e0; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; background: #fafafa; margin-bottom: 15px; }
-        #preview-img { width: 100%; border-radius: 12px; margin-top: 10px; display: none; }
-        .btn-submit { background: var(--primary-color); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; }
-        .btn-submit:disabled { background: #a4b0be; }
-
+        :root { 
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-color: #f8fafc;
+            --text-main: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 16px; 
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+        }
+        
+        .app-card { 
+            width: 100%; 
+            max-width: 480px; 
+            background: white; 
+            border-radius: 24px; 
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header { 
+            padding: 24px 20px 20px; 
+            background: linear-gradient(135deg, var(--primary-color) 0%, #4f46e5 100%);
+            color: white;
+            text-align: center; 
+            position: relative;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: white;
+            border-radius: 24px 24px 0 0;
+        }
+        
+        .header h2 { 
+            margin: 0 0 8px; 
+            font-size: 1.75rem; 
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .header p {
+            margin: 0;
+            opacity: 0.95;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .content { 
+            padding: 24px 20px 28px; 
+        }
+        
+        .form-step {
+            margin-bottom: 24px;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        
+        .input-group label { 
+            display: block; 
+            font-size: 0.95rem; 
+            font-weight: 600; 
+            margin-bottom: 10px; 
+            color: var(--text-main);
+        }
+        
+        input, select, textarea { 
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 2px solid var(--border-color); 
+            border-radius: 14px; 
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            outline: none; 
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
         /* Map styles */
-        #map { width: 100%; height: 220px; border-radius: 12px; overflow: hidden; margin-bottom: 12px; border: 2px solid #edeff2; }
-        .map-actions { display:flex; gap:8px; margin-bottom:12px; }
-        .map-actions button { flex:1; padding:10px; border-radius: 10px; border: 1px solid #dfe4ea; background: white; cursor: pointer; font-weight:600; }
-        .coords { font-size: 0.85rem; color: #57606f; margin-bottom: 12px; }
+        .map-container {
+            position: relative;
+        }
+        
+        #map { 
+            width: 100%; 
+            height: 240px; 
+            border-radius: 14px; 
+            overflow: hidden; 
+            margin-bottom: 12px; 
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .map-actions { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 12px; 
+        }
+        
+        .map-actions button { 
+            flex: 1; 
+            padding: 12px; 
+            border-radius: 12px; 
+            border: 2px solid var(--border-color); 
+            background: white; 
+            cursor: pointer; 
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .map-actions button:hover {
+            border-color: var(--primary-color);
+            background: #f8fafc;
+        }
+        
+        .map-actions button:active {
+            transform: scale(0.98);
+        }
+        
+        .coords { 
+            font-size: 0.85rem; 
+            color: var(--text-secondary); 
+            background: #f8fafc;
+            padding: 10px 14px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .coords.has-location {
+            background: #ecfdf5;
+            color: var(--success-color);
+            border: 1px solid #86efac;
+        }
+        
+        /* Photo upload */
+        .photo-upload-box { 
+            border: 2px dashed var(--border-color); 
+            border-radius: 14px; 
+            padding: 32px 20px; 
+            text-align: center; 
+            cursor: pointer; 
+            background: #fafafa; 
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .photo-upload-box:hover {
+            border-color: var(--primary-color);
+            background: #f8fafc;
+        }
+        
+        .photo-upload-box.has-photo {
+            padding: 0;
+            border-style: solid;
+            border-color: var(--success-color);
+        }
+        
+        #upload-status {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .upload-icon {
+            font-size: 2.5rem;
+        }
+        
+        #preview-img { 
+            width: 100%; 
+            border-radius: 12px;
+            display: none;
+            max-height: 300px;
+            object-fit: cover;
+        }
+        
+        .remove-photo {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+        
+        .remove-photo:hover {
+            background: var(--danger-color);
+            transform: scale(1.1);
+        }
+        
+        .photo-upload-box.has-photo .remove-photo {
+            display: flex;
+        }
+        
+        /* Submit button */
+        .btn-submit { 
+            background: linear-gradient(135deg, var(--primary-color) 0%, #4f46e5 100%);
+            color: white; 
+            border: none; 
+            width: 100%; 
+            padding: 16px; 
+            border-radius: 14px; 
+            font-size: 1.05rem; 
+            font-weight: 700; 
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        }
+        
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+        
+        .btn-submit:disabled { 
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Success/Error messages */
+        .alert {
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .alert.success {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #86efac;
+        }
+        
+        .alert.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+        
+        /* Validation states */
+        .input-error {
+            border-color: var(--danger-color) !important;
+        }
+        
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.85rem;
+            margin-top: 6px;
+            display: none;
+        }
+        
+        /* Character counter */
+        .char-counter {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: right;
+            margin-top: 4px;
+        }
 
-        @media (max-width:480px){
+        /* Responsive */
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .app-card { border-radius: 20px; }
+            .header { padding: 20px 16px 16px; }
+            .content { padding: 20px 16px 24px; }
             #map { height: 200px; }
+            .map-actions button { font-size: 0.85rem; padding: 10px; }
         }
     </style>
 </head>
@@ -41,45 +418,94 @@
 
 <div class="app-card">
     <div class="header">
-        <h2>📢 ActFast sa Tipas</h2>
-        <p>Help the Barangay. Report an incident.</p>
+        <h2><span>📢</span> ActFast sa Tipas</h2>
+        <p>Help our community. Report incidents quickly.</p>
     </div>
 
     <div class="content">
+        <div id="alert-container"></div>
 
-        <div class="input-group">
-            <label>Incident Type</label>
-            <select id="type">
-                <option value="Accident">🚑 Accident</option>
-                <option value="Fallen Tree">🌳 Fallen Tree / Debris</option>
-                <option value="Fire">🔥 Fire Alert</option>
-                <option value="Other">❓ Others</option>
-            </select>
-        </div>
-
-        <div class="input-group">
-            <label>Location (text)</label>
-            <input type="text" id="loc" placeholder="Street name or landmark...">
-        </div>
-
-        <div class="input-group">
-            <label>Pin location on map</label>
-            <div id="map"></div>
-            <div class="map-actions">
-                <button id="use-location-btn" type="button">Use my location</button>
-                <button id="clear-marker-btn" type="button">Clear</button>
+        <!-- Step 1: Incident Type -->
+        <div class="form-step">
+            <div class="step-label">
+                <span class="step-number">1</span>
+                <span>What happened?</span>
             </div>
-            <div class="coords" id="coords-display">No location selected</div>
+            <div class="input-group">
+                <select id="type">
+                    <option value="Accident">🚑 Traffic Accident</option>
+                    <option value="Fallen Tree">🌳 Fallen Tree / Debris</option>
+                    <option value="Fire">🔥 Fire Alert</option>
+                    <option value="Flood">💧 Flooding</option>
+                    <option value="Power Outage">⚡ Power Outage</option>
+                    <option value="Street Light">💡 Street Light Issue</option>
+                    <option value="Other">❓ Other Emergency</option>
+                </select>
+            </div>
         </div>
 
-        <div class="input-group">
-            <label>Details</label>
-            <textarea id="desc" rows="2" placeholder="Briefly describe the situation..."></textarea>
+        <!-- Step 2: Location -->
+        <div class="form-step">
+            <div class="step-label">
+                <span class="step-number">2</span>
+                <span>Where is it?</span>
+            </div>
+            <div class="input-group">
+                <label>Street or Landmark</label>
+                <input type="text" id="loc" placeholder="e.g., Corner of Main St. and Rizal Ave.">
+                <span class="error-message" id="loc-error">Please enter a location</span>
+            </div>
         </div>
 
-        <div class="photo-upload-box" onclick="document.getElementById('file').click()">
-            <strong id="upload-status">📸 Tap to Open Camera</strong>
-            <img id="preview-img" src="">
+        <!-- Step 3: Map Pin -->
+        <div class="form-step">
+            <div class="step-label">
+                <span class="step-number">3</span>
+                <span>Pin exact location</span>
+            </div>
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="map-actions">
+                    <button id="use-location-btn" type="button">
+                        <span>📍</span> Use My Location
+                    </button>
+                    <button id="clear-marker-btn" type="button">
+                        <span>✕</span> Clear
+                    </button>
+                </div>
+                <div class="coords" id="coords-display">Tap map or use your location</div>
+                <span class="error-message" id="coords-error">Please pin the location on map</span>
+            </div>
+        </div>
+
+        <!-- Step 4: Details -->
+        <div class="form-step">
+            <div class="step-label">
+                <span class="step-number">4</span>
+                <span>Additional details</span>
+            </div>
+            <div class="input-group">
+                <label>Description (Optional)</label>
+                <textarea id="desc" rows="3" maxlength="200" placeholder="What should responders know? Any injuries? How severe?"></textarea>
+                <div class="char-counter"><span id="char-count">0</span>/200</div>
+            </div>
+        </div>
+
+        <!-- Step 5: Photo -->
+        <div class="form-step">
+            <div class="step-label">
+                <span class="step-number">5</span>
+                <span>Take a photo</span>
+            </div>
+            <div class="photo-upload-box" id="upload-box" onclick="document.getElementById('file').click()">
+                <button class="remove-photo" onclick="removePhoto(event)">✕</button>
+                <div id="upload-status">
+                    <div class="upload-icon">📸</div>
+                    <div>Tap to open camera</div>
+                </div>
+                <img id="preview-img" src="" alt="Preview">
+            </div>
+            <span class="error-message" id="photo-error">Please attach a photo</span>
         </div>
         
         <input type="file" id="file" accept="image/*" capture="environment" hidden onchange="showPreview()">
@@ -88,7 +514,9 @@
         <input type="hidden" id="lat" />
         <input type="hidden" id="lng" />
 
-        <button class="btn-submit" id="submitBtn" onclick="submitReport()">Post to Barangay Feed</button>
+        <button class="btn-submit" id="submitBtn" onclick="submitReport()">
+            <span id="btn-text">📤 Submit Report</span>
+        </button>
     </div>
 </div>
 
@@ -101,12 +529,20 @@
     const IMGBB_KEY = "f9aa18bd6a2de697cac458627361d7f6";
     const SHEETS_URL = "https://script.google.com/macros/s/AKfycbx-cWczqUZG34yIneZti_jMDSGZ_qcVvfA6tVGynnxe4eyomlNrVucd5mK7_T4ki3Hc/exec";
 
+    /* ================= CHARACTER COUNTER ================= */
+    const descTextarea = document.getElementById("desc");
+    const charCount = document.getElementById("char-count");
+    
+    descTextarea.addEventListener("input", () => {
+        charCount.textContent = descTextarea.value.length;
+    });
+
     /* ================= MAP ================= */
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     const map = new mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/light-v11",
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [121.0437, 14.6760],
         zoom: 13
     });
@@ -124,15 +560,20 @@
         lngInput.value = lngLat.lng || lngLat[0];
         latInput.value = lngLat.lat || lngLat[1];
         coordsDisplay.textContent = 
-            "Lat: " + parseFloat(latInput.value).toFixed(6) + 
-            " • Lng: " + parseFloat(lngInput.value).toFixed(6);
+            "📍 " + parseFloat(latInput.value).toFixed(5) + 
+            ", " + parseFloat(lngInput.value).toFixed(5);
+        coordsDisplay.classList.add("has-location");
+        clearError("coords");
     }
 
     function placeMarker(lngLat) {
         if (marker) {
             marker.setLngLat(lngLat);
         } else {
-            marker = new mapboxgl.Marker({ draggable: true })
+            marker = new mapboxgl.Marker({ 
+                draggable: true,
+                color: "#2563eb"
+            })
                 .setLngLat(lngLat)
                 .addTo(map);
             marker.on("dragend", () => {
@@ -140,7 +581,7 @@
             });
         }
         updateCoords(lngLat);
-        map.flyTo({ center: lngLat, zoom: 15 });
+        map.flyTo({ center: lngLat, zoom: 16, duration: 1000 });
     }
 
     map.on("click", (e) => {
@@ -149,16 +590,25 @@
 
     document.getElementById("use-location-btn").addEventListener("click", () => {
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser.");
+            showAlert("Geolocation is not supported by your browser.", "error");
             return;
         }
+        
+        const btn = document.getElementById("use-location-btn");
+        btn.innerHTML = '<span class="spinner"></span> Getting location...';
+        btn.disabled = true;
+        
         navigator.geolocation.getCurrentPosition((pos) => {
             placeMarker({ 
                 lng: pos.coords.longitude, 
                 lat: pos.coords.latitude 
             });
+            btn.innerHTML = '<span>📍</span> Use My Location';
+            btn.disabled = false;
         }, () => {
-            alert("Unable to retrieve your location. Please allow location access or pick on the map.");
+            showAlert("Unable to get your location. Please allow location access or tap on the map.", "error");
+            btn.innerHTML = '<span>📍</span> Use My Location';
+            btn.disabled = false;
         }, { enableHighAccuracy: true, timeout: 10000 });
     });
 
@@ -167,51 +617,134 @@
         marker = null;
         latInput.value = "";
         lngInput.value = "";
-        coordsDisplay.textContent = "No location selected";
+        coordsDisplay.textContent = "Tap map or use your location";
+        coordsDisplay.classList.remove("has-location");
     });
 
     /* ================= PHOTO ================= */
     function showPreview() {
         const file = document.getElementById("file").files[0];
         const preview = document.getElementById("preview-img");
+        const uploadBox = document.getElementById("upload-box");
+        const uploadStatus = document.getElementById("upload-status");
+        
         if (file) {
             preview.src = URL.createObjectURL(file);
             preview.style.display = "block";
-            document.getElementById("upload-status").innerText = "✅ Photo Attached";
+            uploadStatus.style.display = "none";
+            uploadBox.classList.add("has-photo");
+            clearError("photo");
+        }
+    }
+
+    function removePhoto(event) {
+        event.stopPropagation();
+        const preview = document.getElementById("preview-img");
+        const uploadBox = document.getElementById("upload-box");
+        const uploadStatus = document.getElementById("upload-status");
+        const fileInput = document.getElementById("file");
+        
+        preview.style.display = "none";
+        preview.src = "";
+        uploadStatus.style.display = "flex";
+        uploadBox.classList.remove("has-photo");
+        fileInput.value = "";
+    }
+
+    /* ================= VALIDATION ================= */
+    function showError(field, message) {
+        const input = document.getElementById(field);
+        const errorEl = document.getElementById(field + "-error");
+        
+        if (input) input.classList.add("input-error");
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.style.display = "block";
+        }
+    }
+
+    function clearError(field) {
+        const input = document.getElementById(field);
+        const errorEl = document.getElementById(field + "-error");
+        
+        if (input) input.classList.remove("input-error");
+        if (errorEl) errorEl.style.display = "none";
+    }
+
+    function validateForm() {
+        let isValid = true;
+        
+        // Clear previous errors
+        clearError("loc");
+        clearError("coords");
+        clearError("photo");
+        
+        // Check location text
+        if (!document.getElementById("loc").value.trim()) {
+            showError("loc", "Please enter a street or landmark");
+            isValid = false;
+        }
+        
+        // Check map coordinates
+        if (!latInput.value || !lngInput.value) {
+            showError("coords", "Please pin the location on the map");
+            isValid = false;
+        }
+        
+        // Check photo
+        if (!document.getElementById("file").files[0]) {
+            showError("photo", "Please attach a photo of the incident");
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+
+    /* ================= ALERTS ================= */
+    function showAlert(message, type = "error") {
+        const container = document.getElementById("alert-container");
+        const alert = document.createElement("div");
+        alert.className = `alert ${type}`;
+        alert.innerHTML = `
+            <span>${type === "success" ? "✓" : "⚠"}</span>
+            <span>${message}</span>
+        `;
+        alert.style.display = "flex";
+        container.innerHTML = "";
+        container.appendChild(alert);
+        
+        if (type === "success") {
+            setTimeout(() => {
+                alert.style.display = "none";
+            }, 5000);
         }
     }
 
     /* ================= SUBMIT ================= */
     async function submitReport() {
-        const fileInput = document.getElementById("file");
-        const loc = document.getElementById("loc").value;
+        // Validate form
+        if (!validateForm()) {
+            showAlert("Please fill in all required fields", "error");
+            return;
+        }
+
         const btn = document.getElementById("submitBtn");
-
-        if (!fileInput.files[0]) {
-            alert("Please take a photo.");
-            return;
-        }
-        if (!latInput.value || !lngInput.value) {
-            alert("Please pin the incident location on the map or use your device location.");
-            return;
-        }
-        if (!loc) {
-            alert("Please enter a street or landmark.");
-            return;
-        }
-
+        const btnText = document.getElementById("btn-text");
+        
         btn.disabled = true;
-        btn.innerText = "Sending Report...";
+        btnText.innerHTML = '<span class="spinner"></span> Sending report...';
 
         try {
             // Upload to ImgBB
             const imgForm = new FormData();
-            imgForm.append("image", fileInput.files[0]);
+            imgForm.append("image", document.getElementById("file").files[0]);
 
             const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
                 method: "POST",
                 body: imgForm
             });
+
+            if (!imgRes.ok) throw new Error("Image upload failed");
 
             const imgJson = await imgRes.json();
             const imageUrl = imgJson.data.url;
@@ -219,7 +752,7 @@
             // Send to Google Sheets
             const reportData = {
                 type: document.getElementById("type").value,
-                location: loc,
+                location: document.getElementById("loc").value,
                 description: document.getElementById("desc").value,
                 imageUrl: imageUrl,
                 latitude: latInput.value,
@@ -233,16 +766,22 @@
                 body: JSON.stringify(reportData)
             });
 
-            alert("Success! The Barangay has received your report.");
-            location.reload();
+            showAlert("✓ Report submitted successfully! The barangay has been notified.", "success");
+            
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
 
         } catch (err) {
             console.error(err);
-            alert("Error sending report. Please try again.");
+            showAlert("Failed to send report. Please check your connection and try again.", "error");
             btn.disabled = false;
-            btn.innerText = "Post to Barangay Feed";
+            btnText.innerHTML = '📤 Submit Report';
         }
     }
+
+    /* ================= INPUT LISTENERS ================= */
+    document.getElementById("loc").addEventListener("input", () => clearError("loc"));
 </script>
 
 </body>
